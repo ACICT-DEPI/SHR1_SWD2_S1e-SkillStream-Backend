@@ -2,6 +2,9 @@ const express = require('express')
 require('dotenv').config();
 const connect = require("./dbConnection")
 const bodyParser = require('body-parser');
+const cookieParser = require('cookie-parser')
+const errorHandler = require("./middleware/errorHandler");
+const { isAuthorized, isAdmin } = require('./controllers/userAuthorization');
 
 // port
 const PORT = process.env.PORT || 8000
@@ -10,18 +13,25 @@ const PORT = process.env.PORT || 8000
 connect()
 
 
-
 // Create the express app
 const app = express()
 
+// Middleware
 app.use(bodyParser.json({limit: '100mb'}));
 app.use(bodyParser.urlencoded({     // to support URL-encoded bodies
     limit: '100mb',
     extended: true
     }));
-// Routes and middleware
-// Error handlers
+app.use(cookieParser())
 
+// Routes and middleware
+app.use("/user/", require("./routes/userRoutes"))
+
+app.use("/hello", isAuthorized, isAdmin, (req, res) => {
+    res.json("Hello World")
+})
+// Error handlers
+app.use(errorHandler)
 
 // Start server
 app.listen(PORT, function (err) {

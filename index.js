@@ -5,9 +5,19 @@ const bodyParser = require('body-parser');
 const cookieParser = require('cookie-parser')
 const errorHandler = require("./middleware/errorHandler");
 const { isAuthorized, isAdmin } = require('./controllers/userAuthorization');
+const cors = require("cors");
+
 
 // port
 const PORT = process.env.PORT || 8000
+
+// cors options
+const corsOptions ={
+  // change to your domain
+   origin: true, 
+   credentials: true,
+   optionSuccessStatus: 200,
+}
 
 // connect to DB
 connect()
@@ -22,6 +32,8 @@ app.use(bodyParser.urlencoded({     // to support URL-encoded bodies
     limit: '100mb',
     extended: true
     }));
+
+app.use(cors(corsOptions))
 app.use(cookieParser())
 
 // Routes and middleware

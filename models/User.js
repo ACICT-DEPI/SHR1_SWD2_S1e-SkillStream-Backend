@@ -1,6 +1,8 @@
 const bcrypt = require("bcrypt")
 const mongoose = require('mongoose');
-const Jwt = require("jsonwebtoken")
+const Jwt = require("jsonwebtoken");
+const Joi = require("joi");
+const JoiPasswordComplexity = require("joi-password-complexity")
 require("dotenv").config();
 
 
@@ -43,15 +45,31 @@ userSchema.methods.matchPassword = async function (enteredPassword) {
     return await bcrypt.compare(enteredPassword, this.password)
 }
 
-userSchema.methods.generateJwtToken = function () {
+userSchema.methods.generateAccessToken = function () {
     return Jwt.sign({ _id: this._id }, process.env.JWT_SECRET_KEY, {
         expiresIn: Number.parseInt(process.env.TOKEN_EXPIRES_IN)
+    })
+}
+
+
+userSchema.methods.generateResetPasswordToken = function () {
+    return Jwt.sign({ email: this.email, _id: this._id }, process.env.JWT_SECRET_KEY + this.password, {
+        expiresIn: Number.parseInt(process.env.RESET_PASSWORD_TOKEN_EXPIRES_IN)
     })
 }
 
 userSchema.pre("save", async function (next) {
     if (!this.isModified("password")) {
         next()
+    }
+
+    // Validate Password
+    const isPasswordInvalid = Joi.object({
+        password: JoiPasswordComplexity().required()
+    }).validate({ password: this.password }).error
+
+    if (isPasswordInvalid) {
+        throw new Error(isPasswordInvalid.details[0].message)
     }
 
     // Hash Password

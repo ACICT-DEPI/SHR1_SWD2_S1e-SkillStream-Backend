@@ -2,8 +2,8 @@ const bcrypt = require("bcrypt")
 const mongoose = require('mongoose');
 const Jwt = require("jsonwebtoken");
 const Joi = require("joi");
-const JoiPasswordComplexity = require("joi-password-complexity")
-require("dotenv").config();
+const JoiPasswordComplexity = require("joi-password-complexity");
+require('dotenv').config();
 
 
 
@@ -12,7 +12,8 @@ const userSchema = new mongoose.Schema({
         type: String,
         trim: true,
         required : [true, 'name is a required field'],
-        maxlength: 32
+        maxlength: 32,
+        minlength: 3
     },
  
     email: {
@@ -24,9 +25,7 @@ const userSchema = new mongoose.Schema({
             /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/,
             'this email is invalid'
         ]
- 
     },
- 
     password: {
         type: String,
         trim: true,
@@ -37,6 +36,52 @@ const userSchema = new mongoose.Schema({
         type: Boolean,
         default: false,
     },
+
+    avatar: {
+        public_id: {
+            type: String,
+        },
+        url: {
+            type: String,
+        }
+    },
+
+    followers: {
+        type: [mongoose.Schema.Types.ObjectId],
+        ref: "User",
+        default: []
+    },
+
+    following: {
+        type: [mongoose.Schema.Types.ObjectId],
+        ref: "User",
+        default: []
+    },
+
+    courses: [{
+            course: {
+                type: mongoose.Schema.Types.ObjectId,
+                ref: "Course",
+            },
+            progress: {
+                type: Number,
+                min: 0,
+                max: 100,
+                default: 0
+            }
+        }],
+
+    createdCourses: {
+        type: [mongoose.Schema.Types.ObjectId],
+        ref: "Course",
+        default: []
+    },
+
+    likedCourses: {
+        type: [mongoose.Schema.Types.ObjectId],
+        ref: "Course",
+        default: []
+    }
 
  }, {timestamps: true});
 

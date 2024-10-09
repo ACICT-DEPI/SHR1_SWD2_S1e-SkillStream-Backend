@@ -2,7 +2,8 @@ const expressAsyncHandler = require("express-async-handler");
 const User = require("../models/User");
 const Jwt = require("jsonwebtoken")
 const ErrorResponse = require("../utils/errorResponse")
-const nodeMailer = require("nodemailer")
+const nodeMailer = require("nodemailer");
+const BlackListedToken = require("../models/BlackListedToken");
 require("dotenv").config()
 
 
@@ -30,11 +31,22 @@ const signupController = expressAsyncHandler(async (req, res, next) => {
     
         // User created successfully
         res.cookie("token", token, { 
-            expires: new Date(Date.now() + Number.parseInt(process.env.TOKEN_EXPIRES_IN)),
+            expires: new Date(Date.now() + Number.parseInt(process.env.TOKEN_EXPIRES_IN) * 1000),
             httpOnly: true,
             sameSite: "lax",
             secure: true
-        }).json({ success: true, message: "User created successfully", user: { email:user.email, name: user.name } })
+        }).json({ success: true, message: "User created successfully", user: {
+            _id: user._id,
+            email: user.email,
+            name: user.name,
+            following: user.following,
+            followers: user.followers,
+            courses: user.courses,
+            createdCoureses: user.createdCourses,
+            likedCourses: user.likedCourses,
+            avatar: user.avatar,
+            createdAt: user.createdAt
+        } })
         
     } catch (err) {
         const error = new ErrorResponse(err.message, 500)
@@ -55,6 +67,7 @@ const loginController = expressAsyncHandler(async (req, res, next) => {
 
     // check if user exists and password is correct
     const user = await User.findOne({ email })
+    .populate("following", "name avatar courses followers").populate("followers", "name avatar courses followers")
     if (!user || !(await user.matchPassword(password))) {
         return next(wrongCredentialsError)
     }
@@ -63,13 +76,44 @@ const loginController = expressAsyncHandler(async (req, res, next) => {
     const token = user.generateAccessToken()
 
     // log in successful
+    // should I use getProfile instead ?
     res.cookie("token", token, {
-        expires: new Date(Date.now() + Number.parseInt(process.env.TOKEN_EXPIRES_IN)),
+        expires: new Date(Date.now() + Number.parseInt(process.env.TOKEN_EXPIRES_IN) * 1000),
         httpOnly: true,
         sameSite: "lax",
         secure: true
-    }).json({ success: true, message: "You're signed in", user: { email: user.email, name: user.name } })
+    }).json({ success: true, message: "You're signed in", user: {
+        _id: user._id,
+        email: user.email,
+        name: user.name,
+        following: user.following,
+        followers: user.followers,
+        courses: user.courses,
+        createdCoureses: user.createdCourses,
+        likedCourses: user.likedCourses,
+        avatar: user.avatar,
+        createdAt: user.createdAt
+    } })
 });
+
+
+const logoutController = expressAsyncHandler(async (req, res, next) => {
+    const { token } = req.cookies
+    try {
+        if (!token) {
+            throw new ErrorResponse("You're not signed in", 401)
+        }
+
+        // should I check if token is blacklisted ?
+
+        const expiresAt = Jwt.decode(token).exp
+        await BlackListedToken.create({ token, expiresAt: new Date(expiresAt * 1000) })
+        await BlackListedToken.cleanUpExpiredTokens()
+    } catch (error) {
+        return next(error)
+    }
+    res.clearCookie("token").json({ success: true, message: "You've been signed out" })
+})
 
 
 const forgotPasswordController = expressAsyncHandler(async (req, res, next) => {
@@ -200,4 +244,4 @@ const resetPasswordController = expressAsyncHandler(async (req, res, next) => {
 
 // TODO: Add verify email functionality
 
-module.exports = { signupController, loginController, forgotPasswordController, resetPasswordController }
+module.exports = { signupController, loginController, forgotPasswordController, resetPasswordController, logoutController };

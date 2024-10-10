@@ -53,6 +53,11 @@ const courseSchema = new mongoose.Schema({
     likes: {
         type: Number,
         default: 0
+    },
+
+    content: {
+        type: String,
+        required : [true, 'content is a required field'],
     }
 })
 

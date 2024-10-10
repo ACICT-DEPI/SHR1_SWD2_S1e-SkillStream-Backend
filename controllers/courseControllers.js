@@ -14,10 +14,13 @@ const displayCourses = asyncHandler(async (req, res, next) => {
 
     try {
         const count = await Course.countDocuments({ categories: { $in: categories } });
-        const courses = await Course.find().skip(pageSize * (page - 1)).limit(pageSize)
+        const coursesList = await Course.find()
+        .skip(pageSize * (page - 1)).limit(pageSize).select("-content")
+        .populate({ path: "instructors", select: "name avatar courses followers" })
+        .populate({ path: "categories", select: "name _id" })
         res.status(201).json({
             success: true,
-            courses,
+            coursesList,
             page,
             pages: Math.ceil(count / pageSize),
             count,
@@ -82,7 +85,9 @@ const updateCourse = asyncHandler(async (req, res, next) => {
 const getCourse = asyncHandler(async (req, res, next) => {
     const { id } = req.params
     try {
-        const course = await Course.findById(id)
+        const course = await Course.findById(id).select("-content")
+        .populate({ path: "instructors", select: "name avatar courses followers" })
+        .populate({ path: "categories", select: "name _id" })
         res.json({ success: true, course })
     } catch (error) {
         next(error)
@@ -90,4 +95,16 @@ const getCourse = asyncHandler(async (req, res, next) => {
 })
 
 
-module.exports = { displayCourses, createCourse, deleteCourse, updateCourse, getCourse }
+const getCourseContent = asyncHandler(async (req, res, next) => {
+    const { id } = req.params
+    try {
+        const content = await Course.findById(id, "content")
+        // why do I have to go like this?
+        res.json({ success: true, content: content.content })
+    } catch (error) {
+        next(error)
+    }
+})
+
+
+module.exports = { displayCourses, createCourse, deleteCourse, updateCourse, getCourse, getCourseContent }

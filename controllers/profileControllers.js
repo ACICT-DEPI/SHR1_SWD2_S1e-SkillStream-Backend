@@ -17,7 +17,11 @@ const updateProfileSchema = Joi.object({
 const getProfile = asyncHandler(async (req, res, next) => {
     const { id } = req.user
     try {
-        const user = await User.findById(id).populate("following", "name avatar courses followers").populate("followers", "name avatar courses followers")
+        const user = await User.findById(id).populate("following", "name avatar courses followers")
+        .populate("followers", "name avatar courses followers")
+        .populate({ path: "likedCourses", populate: [{ path: "instructors", select: "name avatar courses followers" }, { path: "categories", select: "name _id" }] })
+        .populate({ path: "createdCourses", populate: [{ path: "instructors", select: "name avatar courses followers" }, { path: "categories", select: "name _id" }] })
+        .populate({ path: "courses", populate: { path: "course", select: "-content", populate: [{ path: "instructors", select: "name avatar courses followers" }, { path: "categories", select: "name _id" }] } })
         res.json({ success: true, user: {
             _id: user._id,
             email: user.email,
@@ -103,7 +107,17 @@ const addCourse = asyncHandler(async (req, res, next) => {
     const { id } = req.user
     const { course } = req.body
     try {
+        if (await Course.findById(course).countDocuments() === 0) {
+            throw new ErrorResponse("Course not found", 404)
+        }
+
+        const courses = await User.findById(id, "courses")
+        if (courses.courses.find((c) => c.course.toString() === course.toString())) {
+            throw new ErrorResponse("You are already enrolled in this course", 400)
+        }
+
         const user = await User.findByIdAndUpdate(id, { $push: { courses: { course: course, progress: 0 } } }, { new: true, runValidators: true })
+        .populate({ path: "courses", select: "-content", populate: [{ path: "instructors", select: "name avatar courses followers" }, { path: "categories", select: "name _id" }] })
         res.json({ success: true, courses: user.courses })
     } catch (error) {
         next(error)
@@ -115,7 +129,18 @@ const removeCourse = asyncHandler(async (req, res, next) => {
     const { id } = req.user
     const { course } = req.body
     try {
+
+        if (await Course.findById(course).countDocuments() === 0) {
+            throw new ErrorResponse("Course not found", 404)
+        }
+
+        const courses = await User.findById(id, "courses")
+        if (!courses.courses.find((c) => c.course.toString() === course.toString())) {
+            throw new ErrorResponse("You are not enrolled in this course", 400)
+        }
+
         const user = await User.findByIdAndUpdate(id, { $pull: { courses: { course: course } } }, { new: true, runValidators: true })
+        .populate({ path: "courses", select: "-content", populate: [{ path: "instructors", select: "name avatar courses followers" }, { path: "categories", select: "name _id" }] })
         res.json({ success: true, courses: user.courses })
     } catch (error) {
         next(error)
@@ -126,8 +151,20 @@ const removeCourse = asyncHandler(async (req, res, next) => {
 const likeCourse = asyncHandler(async (req, res, next) => {
     const { id } = req.user
     const { course } = req.body
+    console.log(req.body)
     try {
+        
+        if (await Course.findById(course).countDocuments() === 0) {
+            throw new ErrorResponse("Course not found", 404)
+        }
+
+        const likedCourses = await User.findById(id, "likedCourses")
+        if (likedCourses.likedCourses.includes(course)) {
+            throw new ErrorResponse("You have already liked this course", 400)
+        }
+
         const user = await User.findByIdAndUpdate(id, { $push: { likedCourses: course } }, { new: true, runValidators: true })
+        .populate({ path: "likedCourses", select: "-content", populate: [{ path: "instructors", select: "name avatar courses followers" }, { path: "categories", select: "name _id" }] })
         await Course.findByIdAndUpdate(course, { $inc: { likes: 1 } })
         res.json({ success: true, likedCourses: user.likedCourses })
     } catch (error) {
@@ -140,9 +177,21 @@ const unlikeCourse = asyncHandler(async (req, res, next) => {
     const { id } = req.user
     const { course } = req.body
     try {
+
+        if (await Course.findById(course).countDocuments() === 0) {
+            throw new ErrorResponse("Course not found", 404)
+        }
+
+        const likedCourses = await User.findById(id, "likedCourses")
+        if (!likedCourses.likedCourses.includes(course)) {
+            throw new ErrorResponse("You have not liked this course", 400)
+        }
+
         const user = await User.findByIdAndUpdate(id, { $pull: { likedCourses: course } }, { new: true, runValidators: true })
+        .populate({ path: "likedCourses", select: "-content", populate: [{ path: "instructors", select: "name avatar courses followers" }, { path: "categories", select: "name _id" }] })
         await Course.findByIdAndUpdate(course, { $inc: { likes: -1 } })
         res.json({ success: true, likedCourses: user.likedCourses })
+
     } catch (error) {
         next(error)
     }

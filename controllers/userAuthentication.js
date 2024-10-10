@@ -67,7 +67,12 @@ const loginController = expressAsyncHandler(async (req, res, next) => {
 
     // check if user exists and password is correct
     const user = await User.findOne({ email })
-    .populate("following", "name avatar courses followers").populate("followers", "name avatar courses followers")
+    .populate("following", "name avatar courses followers")
+    .populate("followers", "name avatar courses followers")
+    .populate({ path: "likedCourses", populate: [{ path: "instructors", select: "name avatar courses followers" }, { path: "categories", select: "name _id" }] })
+    .populate({ path: "createdCourses", populate: [{ path: "instructors", select: "name avatar courses followers" }, { path: "categories", select: "name _id" }] })
+    .populate({ path: "courses", populate: { path: "course", populate: [{ path: "instructors", select: "name avatar courses followers" }, { path: "categories", select: "name _id" }] } })
+
     if (!user || !(await user.matchPassword(password))) {
         return next(wrongCredentialsError)
     }

@@ -5,7 +5,7 @@ const cloudinary = require('../utils/cloudinary');
 
 const displayCourses = asyncHandler(async (req, res, next) => {
     
-    const pageSize = 4;
+    const pageSize = 6;
     const page = Number(req.query.pageNumber) || 1;
 
     const ids = await Category.find({}, { _id: 1 });
@@ -13,6 +13,21 @@ const displayCourses = asyncHandler(async (req, res, next) => {
     const categories = req.query.category || ids.map(id => id._id);
 
     try {
+        if (page === 0) {
+            // TODO: better design
+            const coursesList = await Course.find()
+            .select("-content")
+            .populate({ path: "instructors", select: "name avatar courses followers" })
+            .populate({ path: "categories", select: "name _id" })
+            return res.status(201).json({
+                success: true,
+                coursesList,
+                page,
+                pages: Math.ceil(count / pageSize),
+                count,
+                categories
+            })
+        }
         const count = await Course.countDocuments({ categories: { $in: categories } });
         const coursesList = await Course.find()
         .skip(pageSize * (page - 1)).limit(pageSize).select("-content")

@@ -82,11 +82,9 @@ const updateProfile = asyncHandler(async (req, res, next) => {
             })
             req.body.avatar = { public_id, url: secure_url }
         }
-        console.log(req.body)
         await User.findByIdAndUpdate(id, req.body)
         res.json({ success: true, message: "Profile updated" })
     } catch (error) {
-        console.log(error)
         next(error)
     }
 })
@@ -151,7 +149,6 @@ const removeCourse = asyncHandler(async (req, res, next) => {
 const likeCourse = asyncHandler(async (req, res, next) => {
     const { id } = req.user
     const { course } = req.body
-    console.log(req.body)
     try {
         
         if (await Course.findById(course).countDocuments() === 0) {
@@ -219,7 +216,6 @@ const followUser = asyncHandler(async (req, res, next) => {
     const { id } = req.user
     const { userId } = req.body
     try {
-
         if (id === userId) {
             throw new ErrorResponse("You can't follow yourself", 400)
         }

@@ -52,6 +52,7 @@ app.use(cookieParser())
 
 // Routes and middleware
 app.use("/user/", require("./routes/userRoutes"))
+app.use("/users/", require("./routes/usersRoutes"))
 app.use("/profile/", isAuthorized, require("./routes/profileRoutes"))
 app.use("/api/course/", require("./routes/courseRoutes"))
 app.use("/api/category/", require("./routes/categoryRoutes"))

@@ -56,7 +56,6 @@ app.use("/users/", require("./routes/usersRoutes"))
 app.use("/profile/", isAuthorized, require("./routes/profileRoutes"))
 app.use("/api/course/", require("./routes/courseRoutes"))
 app.use("/api/category/", require("./routes/categoryRoutes"))
-app.use("/", (req, res) => res.status(200).send("Welcome to the backend"))
 
 // Error handlers
 app.use(errorHandler)

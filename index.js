@@ -19,6 +19,7 @@ const corsOptions ={
    origin: true, 
    credentials: true,
    optionSuccessStatus: 200,
+   exposedHeaders: ["Authorization"]
 }
 
 // connect to DB

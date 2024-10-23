@@ -33,6 +33,7 @@ const signupController = expressAsyncHandler(async (req, res, next) => {
         res.cookie("refresh_token", refresh_token, {
             expires: new Date(Date.now() + Number.parseInt(process.env.REFRESH_TOKEN_EXPIRES_IN) * 1000),
             httpOnly: true,
+            // is it safe to set sameSite to None?
             sameSite: "None",
             secure: true
         }).json({ success: true, message: "User created successfully", user: {

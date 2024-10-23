@@ -1,20 +1,29 @@
 const Jwt = require("jsonwebtoken")
 const ErrorResponse = require("../utils/errorResponse")
 const User = require("../models/User")
+const BlackListedToken = require("../models/BlackListedToken")
 
 
 const isAuthorized = async (req, res, next) => {
 
-    const token = req.cookies.token
-
-    // check if token exists
-    if (!token) {
-        return next(new ErrorResponse("You must be logged in to access this ressource", 401))
+    let accessToken = req.get("Authorization")?.split(" ")[1]
+    
+    // check if access token doesn't exist or is expired
+    if (!accessToken || !Jwt.verify(accessToken, process.env.JWT_SECRET_KEY)) {
+        try {
+            accessToken = await refreshAccessToken(req.cookies.refresh_token)
+        } catch (error) {
+            return next(new ErrorResponse(error.message, 401))
+        }
+        if (!accessToken) {
+            return next(new ErrorResponse("unauthorized", 403))
+        }
+        res.set('Authorization', `Bearer ${accessToken}`);
     }
-
-    // verify token
+    
     try {
-        const decoded = Jwt.verify(token, process.env.JWT_SECRET_KEY)
+        // verify access token
+        const decoded = Jwt.verify(accessToken, process.env.JWT_SECRET_KEY)
         // add user from payload
         req.user = await User.findById(decoded._id)
         next()
@@ -32,5 +41,21 @@ const isAdmin = (req, res, next) => {
     next()
 }
 
+
+const refreshAccessToken = async (refreshToken) => {
+    if (!refreshToken) return false
+    // check if refresh token is blacklisted
+    const isBlacklisted = await BlackListedToken.findOne({ token: refreshToken })
+    if (isBlacklisted) return false
+    try {
+        const decoded = Jwt.verify(refreshToken, process.env.JWT_SECRET_KEY)
+        const user = await User.findById(decoded._id)
+        if (!user) return false
+        const accessToken = Jwt.sign({ _id: user._id }, process.env.JWT_SECRET_KEY, { expiresIn: Number.parseInt(process.env.ACCESS_TOKEN_EXPIRES_IN) })
+        return accessToken
+    } catch (error) {
+        return false
+    }
+}
 
 module.exports = { isAuthorized, isAdmin }

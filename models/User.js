@@ -90,9 +90,10 @@ userSchema.methods.matchPassword = async function (enteredPassword) {
     return await bcrypt.compare(enteredPassword, this.password)
 }
 
-userSchema.methods.generateAccessToken = function () {
+
+userSchema.methods.generateRefreshToken = function () {
     return Jwt.sign({ _id: this._id }, process.env.JWT_SECRET_KEY, {
-        expiresIn: Number.parseInt(process.env.TOKEN_EXPIRES_IN)
+        expiresIn: Number.parseInt(process.env.REFRESH_TOKEN_EXPIRES_IN)
     })
 }
 

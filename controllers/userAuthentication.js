@@ -26,12 +26,12 @@ const signupController = expressAsyncHandler(async (req, res, next) => {
         // Create User
         const user = await User.create({ name, email, password })
 
-        // generate token
-        const token = user.generateAccessToken()
+        // generate refresh_token
+        const refresh_token = user.generateRefreshToken()
     
         // User created successfully
-        res.cookie("token", token, { 
-            expires: new Date(Date.now() + Number.parseInt(process.env.TOKEN_EXPIRES_IN) * 1000),
+        res.cookie("refresh_token", refresh_token, {
+        expires: new Date(Date.now() + Number.parseInt(process.env.REFRESH_TOKEN_EXPIRES_IN) * 1000),
             httpOnly: true,
             sameSite: "lax",
             secure: true
@@ -77,13 +77,13 @@ const loginController = expressAsyncHandler(async (req, res, next) => {
         return next(wrongCredentialsError)
     }
 
-    // generate token
-    const token = user.generateAccessToken()
+    // generate refresh_token
+    const refresh_token = user.generateRefreshToken()
 
     // log in successful
     // should I use getProfile instead ?
-    res.cookie("token", token, {
-        expires: new Date(Date.now() + Number.parseInt(process.env.TOKEN_EXPIRES_IN) * 1000),
+    res.cookie("refresh_token", refresh_token, {
+        expires: new Date(Date.now() + Number.parseInt(process.env.REFRESH_TOKEN_EXPIRES_IN) * 1000),
         httpOnly: true,
         sameSite: "lax",
         secure: true
@@ -103,21 +103,22 @@ const loginController = expressAsyncHandler(async (req, res, next) => {
 
 
 const logoutController = expressAsyncHandler(async (req, res, next) => {
-    const { token } = req.cookies
+    const { refresh_token } = req.cookies
     try {
-        if (!token) {
+        if (!refresh_token) {
             throw new ErrorResponse("You're not signed in", 401)
         }
 
-        // should I check if token is blacklisted ?
+        // should I check if refresh_token is blacklisted ?
 
-        const expiresAt = Jwt.decode(token).exp
-        await BlackListedToken.create({ token, expiresAt: new Date(expiresAt * 1000) })
+        const expiresAt = Jwt.decode(refresh_token).exp
+        await BlackListedToken.create({ token: refresh_token, expiresAt: new Date(expiresAt * 1000) })
         await BlackListedToken.cleanUpExpiredTokens()
     } catch (error) {
         return next(error)
     }
-    res.clearCookie("token").json({ success: true, message: "You've been signed out" })
+    res.set('Authorization', ``);
+    res.clearCookie("refresh_token").json({ success: true, message: "You've been signed out" })
 })
 
 

@@ -33,7 +33,7 @@ const signupController = expressAsyncHandler(async (req, res, next) => {
         res.cookie("refresh_token", refresh_token, {
         expires: new Date(Date.now() + Number.parseInt(process.env.REFRESH_TOKEN_EXPIRES_IN) * 1000),
             httpOnly: true,
-            sameSite: "lax",
+            sameSite: false,
             secure: true
         }).json({ success: true, message: "User created successfully", user: {
             _id: user._id,
@@ -85,7 +85,7 @@ const loginController = expressAsyncHandler(async (req, res, next) => {
     res.cookie("refresh_token", refresh_token, {
         expires: new Date(Date.now() + Number.parseInt(process.env.REFRESH_TOKEN_EXPIRES_IN) * 1000),
         httpOnly: true,
-        sameSite: "lax",
+        sameSite: false,
         secure: true
     }).json({ success: true, message: "You're signed in", user: {
         _id: user._id,
@@ -133,7 +133,7 @@ const forgotPasswordController = expressAsyncHandler(async (req, res, next) => {
         return next(new ErrorResponse("There is no user with that email", 404));
     }
 
-    const resetUrl = `http://localhost:3000/account/reset-password/${user._id}/${user.generateResetPasswordToken()}`;
+    const resetUrl = `https://backend-eta-ten-70.vercel.app/account/reset-password/${user._id}/${user.generateResetPasswordToken()}`;
 
     // send email
     try {

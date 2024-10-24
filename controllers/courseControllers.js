@@ -13,6 +13,7 @@ const displayCourses = asyncHandler(async (req, res, next) => {
     const categories = req.query.category || ids.map(id => id._id);
 
     try {
+        const count = await Course.countDocuments({ categories: { $in: categories } });
         if (page === -1) {
             // TODO: better design
             const coursesList = await Course.find()
@@ -28,7 +29,6 @@ const displayCourses = asyncHandler(async (req, res, next) => {
                 categories
             })
         }
-        const count = await Course.countDocuments({ categories: { $in: categories } });
         const coursesList = await Course.find()
         .skip(pageSize * (page - 1)).limit(pageSize).select("-content")
         .populate({ path: "instructors", select: "name avatar courses followers" })

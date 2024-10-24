@@ -14,9 +14,12 @@ const displayCourses = asyncHandler(async (req, res, next) => {
 
     try {
         const count = await Course.countDocuments({ categories: { $in: categories } });
+        // top 4 Courses
         if (page === -1) {
             // TODO: better design
             const coursesList = await Course.find()
+            .sort({ likes: -1 })
+            .limit(4)
             .select("-content")
             .populate({ path: "instructors", select: "name avatar courses followers" })
             .populate({ path: "categories", select: "name _id" })

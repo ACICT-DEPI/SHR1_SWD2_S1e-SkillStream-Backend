@@ -13,7 +13,8 @@ const displayCourses = asyncHandler(async (req, res, next) => {
     const categories = req.query.category || ids.map(id => id._id);
 
     try {
-        const count = await Course.countDocuments({ categories: { $in: categories } });
+        // update to categories when it's implemented
+        const count = await Course.countDocuments();
         // top 4 Courses
         if (page === -1) {
             // TODO: better design

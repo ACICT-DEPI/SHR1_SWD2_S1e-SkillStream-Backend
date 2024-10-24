@@ -134,7 +134,7 @@ const forgotPasswordController = expressAsyncHandler(async (req, res, next) => {
         return next(new ErrorResponse("There is no user with that email", 404));
     }
 
-    const resetUrl = `https://backend-eta-ten-70.vercel.app/account/reset-password/${user._id}/${user.generateResetPasswordToken()}`;
+    const resetUrl = `https://skill-stream-navy.vercel.app/account/reset-password/${user._id}/${user.generateResetPasswordToken()}`;
 
     // send email
     try {

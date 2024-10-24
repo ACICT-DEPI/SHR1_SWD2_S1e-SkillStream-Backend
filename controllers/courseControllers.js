@@ -13,7 +13,7 @@ const displayCourses = asyncHandler(async (req, res, next) => {
     const categories = req.query.category || ids.map(id => id._id);
 
     try {
-        if (page === 0) {
+        if (page === -1) {
             // TODO: better design
             const coursesList = await Course.find()
             .select("-content")
